@@ -1,0 +1,52 @@
+import os
+import sys
+import platform
+import scons_compiledb
+
+
+def buildHallucen():
+    os.chdir("lib/Hallucen")
+    status = os.system("scons -j 8")
+    if status != 0:
+        print("Failed to build hallucen, exit code{}", status)
+        exit(-1)
+
+
+args = sys.argv
+args.remove(sys.argv[0])
+
+if os.path.exists("lib/Hallucen"):
+    buildHallucen()
+
+else:
+    print("Hallucen not found, cloning...")
+    os.chdir("lib")
+    os.system("git clone https://github.com/AnonymousBit0111/Hallucen")
+    buildHallucen()
+
+os.chdir("..")
+os.chdir("..")
+
+flags = ["-std=c++20"]
+incPath = ["include", "lib/Hallucen/include", "lib/Hallucen/include/glm"]
+libPath = ["lib", "lib/Hallucen/bin",
+           "lib/Hallucen/lib"]  #this is quite annoying to have to do tbh
+libs = ["Hallucen", "pthread", "SDL2", "TracyClient"]
+frameworks = []
+src = Glob("src/*.cpp")
+
+if "Darwin" in platform.system():
+    frameworks.append(["Cocoa", "OpenGL", "IOkit"])
+flags.append(["-DDEBUG", "-g"])
+
+env = Environment(CPPFLAGS=flags,
+                  CXX='clang++',
+                  CPPPATH=incPath,
+                  LIBS=libs,
+                  FRAMEWORKS=frameworks,
+                  LIBPATH=libPath,
+                  SCONS_CXX_STANDARD='c++20')
+
+scons_compiledb.enable(env)
+env.Program("bin/Game", src)
+env.CompileDb()
